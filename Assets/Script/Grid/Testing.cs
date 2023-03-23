@@ -4,7 +4,7 @@ public class Testing : MonoBehaviour
 {
     [SerializeField]
     private HeatMapVisual _heatMapVisual;
-    private Grid _grid;
+    private Grid<HeatMapGridObject> _grid;
     private Camera _mainCamera;
 
     // Start is called before the first frame update
@@ -16,7 +16,10 @@ public class Testing : MonoBehaviour
         float height = Camera.main.orthographicSize * 2.0f;
         float width = height * Camera.main.aspect;
         
-        _grid = new Grid(10, 10, 1f, new Vector3(-(width / 2), -(height / 2), 0));
+        _grid = new Grid<HeatMapGridObject>(36, 20, 1f, 
+            new Vector3(-(width / 2), -(height / 2), 0), 
+            (Grid<HeatMapGridObject> g, int x, int y) => new HeatMapGridObject(g,x,y));
+        
         _heatMapVisual.SetGrid(_grid);
     }
 
@@ -26,10 +29,43 @@ public class Testing : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             Vector3 mousePosition = UtilityLibrary.GetMouseWorldPosition(_mainCamera);
-            // int value = _grid.GetValue(mousePosition);
-            // _grid.SetValue(mousePosition, value + 5);
-            _grid.AddValue(mousePosition, 100, 10, 1);
+            HeatMapGridObject heatMapGridObject = _grid.GetGridObject(mousePosition);
+            heatMapGridObject?.AddValue(5);
         }
-           
+    }
+}
+
+public class HeatMapGridObject
+{
+    private const int MAX = 100;
+    private const int MIN = 0;
+
+    private Grid<HeatMapGridObject> grid;
+    private int value;
+    private int x;
+    private int y;
+
+    public HeatMapGridObject(Grid<HeatMapGridObject> grid, int x, int y)
+    {
+        this.x = x;
+        this.y = y;
+        this.grid = grid;
+    }
+
+    public void AddValue(int newValue)
+    {
+        value += newValue;
+        value = Mathf.Clamp(value, MIN, MAX);
+        grid.TriggerGridObjectChanged(x, y);
+    }
+
+    public float GetValueNormalized()
+    {
+        return (float)value / MAX;
+    }
+
+    public override string ToString()
+    {
+        return value.ToString();
     }
 }
